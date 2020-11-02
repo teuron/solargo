@@ -1,0 +1,18 @@
+debug: false                
+summary:
+  telegram_url: "https://api.telegram.org/bot"
+  bot_token: "bot_token"           
+  chat_id: "chat_id"               
+  send_statistics: false  
+inverter:
+  ip: "1.1.1.1"                  
+  port: 2                 
+  device_id: "3"            
+logging:                    
+  enabled: true             
+  file_name: "logs/log.log"
+persistence:
+  url: "https://127.0.0.1:1234" 
+  database_name:  "dbname"             
+  user: "dbuser"                      
+  password: "dbpasswd"                  
