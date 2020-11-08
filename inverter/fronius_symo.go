@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -90,45 +91,89 @@ func (f *FroniusSymo) RetrieveData() (Data, error) {
 	data.Statistics.Month = int(month)
 	data.Statistics.WeekDay = time.Now().Weekday().String()
 
-	if err := f.getAPIVersion(&data); err != nil {
-		log.Info("Could not retrieve GetApiVersion", err)
+	var wg sync.WaitGroup
+	done := make(chan bool)
+	occuredErrors := make(chan error)
+
+	//We have 8 concurrent functions
+	wg.Add(7)
+
+	go func() {
+		if err := f.getAPIVersion(&data); err != nil {
+			log.Info("Could not retrieve GetApiVersion", err)
+			occuredErrors <- err
+		}
+		if !cmp.Equal(data.Info.FirmWare, "1") {
+			log.Info("Wrong Api-Version", data.Info.FirmWare)
+			occuredErrors <- fmt.Errorf("Wrong Api-Version %s", data.Info.FirmWare)
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := f.powerFlowRealtimeData(&data); err != nil {
+			log.Info("Could not retrieve PowerflowRealtimeData", err)
+			occuredErrors <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		//It is ok to have an error here -> not everyone has the right meter
+		if err := f.meterRealtimeData(&data); err != nil {
+			log.Info("Could not retrieve PowerflowRealtimeData", err)
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := f.inverterRealtimeData(&data); err != nil {
+			log.Info("Could not retrieve InverterRealtimeData", err)
+			occuredErrors <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := f.inverterInfo(&data); err != nil {
+			log.Info("Could not retrieve InverterRealtimeData", err)
+			occuredErrors <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := f.inverterCommonData(&data); err != nil {
+			log.Info("Could not retrieve common inverter data", err)
+			occuredErrors <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := f.archiveData(&data); err != nil {
+			log.Info("Could not retrieve archive data", err)
+			occuredErrors <- err
+		}
+		wg.Done()
+	}()
+
+	// Important wait until wg is done
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// carry on
+		break
+	case err := <-occuredErrors:
+		close(occuredErrors)
+		log.Info("Received Error: ", err)
 		return data, err
 	}
 
-	if !cmp.Equal(data.Info.FirmWare, "1") {
-		log.Info("Wrong Api-Version", data.Info.FirmWare)
-		return data, fmt.Errorf("Wrong Api-Version %s", data.Info.FirmWare)
-	}
-
-	if err := f.powerFlowRealtimeData(&data); err != nil {
-		log.Info("Could not retrieve PowerflowRealtimeData", err)
-		return data, err
-	}
-
-	//It is ok to have an error here -> not everyone has the right meter
-	if err := f.meterRealtimeData(&data); err != nil {
-		log.Info("Could not retrieve PowerflowRealtimeData", err)
-	}
-
-	if err := f.inverterRealtimeData(&data); err != nil {
-		log.Info("Could not retrieve InverterRealtimeData", err)
-		return data, err
-	}
-
-	if err := f.inverterInfo(&data); err != nil {
-		log.Info("Could not retrieve InverterRealtimeData", err)
-		return data, err
-	}
-
-	if err := f.inverterCommonData(&data); err != nil {
-		log.Info("Could not retrieve common inverter data", err)
-		return data, err
-	}
-
-	if err := f.archiveData(&data); err != nil {
-		log.Info("Could not retrieve archive data", err)
-		return data, err
-	}
 	log.Info(fmt.Sprintf("Received the following data: %#v", data))
 	return data, nil
 }

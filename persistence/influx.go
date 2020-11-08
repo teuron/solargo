@@ -55,7 +55,7 @@ func inverterDataToInfluxData(data inverter.Data) string {
 func (db *Influx) SendData(data inverter.Data) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/write?db=%s&precision=s", db.URL, db.DatabaseName), strings.NewReader(inverterDataToInfluxData(data)))
-	print(fmt.Sprintf("%s/write?db=%s&precision=s", db.URL, db.DatabaseName))
+
 	if err != nil {
 		log.Error("Could not create request: ", err)
 		return
