@@ -4,8 +4,8 @@ After=network.target
 
 #TODO change WorkingDirectory, ExecStart and user to the real values!
 [Service]
-WorkingDirectory=/home/pi/  
-ExecStart=/home/pi/SolarGo/solargo
+WorkingDirectory=/home/pi/solargo 
+ExecStart=/home/pi/solargo/solargo
 User=pi
 StandardOutput=inherit
 StandardError=inherit
