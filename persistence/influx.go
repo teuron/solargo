@@ -55,12 +55,16 @@ func inverterDataToInfluxData(data inverter.Data) string {
 func (db *Influx) SendData(data inverter.Data) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/write?db=%s&precision=s", db.URL, db.DatabaseName), strings.NewReader(inverterDataToInfluxData(data)))
+	print(fmt.Sprintf("%s/write?db=%s&precision=s", db.URL, db.DatabaseName))
 	if err != nil {
 		log.Error("Could not create request: ", err)
 		return
 	}
 
-	req.SetBasicAuth(db.User, db.Password)
+	//Only add authentication if username and password is provided
+	if db.User != "" && db.Password != "" {
+		req.SetBasicAuth(db.User, db.Password)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
