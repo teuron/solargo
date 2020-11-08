@@ -278,7 +278,7 @@ func (f *FroniusSymo) inverterRealtimeData(data *Data) error {
 }
 
 func (f *FroniusSymo) getAPIVersion(data *Data) error {
-	uri := fmt.Sprintf("http://%s:%d/solar_api/v1/GetAPIVersion.cgi", f.IP.String(), f.Port)
+	uri := fmt.Sprintf("http://%s:%d/solar_api/GetAPIVersion.cgi", f.IP.String(), f.Port)
 	httpResult, err := http.Get(uri)
 
 	if err != nil {
@@ -412,19 +412,19 @@ func (f *FroniusSymo) archiveData(data *Data) error {
 				Inverter struct {
 					Data struct {
 						String1Voltage struct {
-							Values float64
+							Values map[string]float64
 						} `json:"Voltage_DC_String_1"`
 						String1Current struct {
-							Values float64
+							Values map[string]float64
 						} `json:"Current_DC_String_1"`
 						String2Voltage struct {
-							Values float64
+							Values map[string]float64
 						} `json:"Voltage_DC_String_2"`
 						String2Current struct {
-							Values float64
+							Values map[string]float64
 						} `json:"Current_DC_String_2"`
 						Temperature struct {
-							Values float64
+							Values map[string]float64
 						} `json:"Temperature_Powerstage"`
 					}
 				} `json:"inverter/1"`
@@ -444,11 +444,30 @@ func (f *FroniusSymo) archiveData(data *Data) error {
 		return fmt.Errorf("Error: %s, Inverter Reason: %s", err, result.Head.Status.Reason)
 	}
 
-	data.PV.String1.Voltage = result.Body.Data.Inverter.Data.String1Voltage.Values
-	data.PV.String1.Current = result.Body.Data.Inverter.Data.String1Current.Values
-	data.PV.String2.Voltage = result.Body.Data.Inverter.Data.String2Voltage.Values
-	data.PV.String2.Current = result.Body.Data.Inverter.Data.String2Current.Values
-	data.Service.Temperature = result.Body.Data.Inverter.Data.Temperature.Values
+	for _, value := range result.Body.Data.Inverter.Data.String1Voltage.Values {
+		data.PV.String1.Voltage = value
+		break
+	}
+
+	for _, value := range result.Body.Data.Inverter.Data.String1Current.Values {
+		data.PV.String1.Current = value
+		break
+	}
+
+	for _, value := range result.Body.Data.Inverter.Data.String2Voltage.Values {
+		data.PV.String2.Voltage = value
+		break
+	}
+
+	for _, value := range result.Body.Data.Inverter.Data.String2Current.Values {
+		data.PV.String2.Current = value
+		break
+	}
+
+	for _, value := range result.Body.Data.Inverter.Data.Temperature.Values {
+		data.Service.Temperature = value
+		break
+	}
 
 	return nil
 }
