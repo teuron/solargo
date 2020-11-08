@@ -14,7 +14,18 @@ logging:
   enabled: true             #Enable or disable logging
   file_name: "logs/log.log" #Choose logfile
 persistence:
-  url: "https://127.0.0.1:1234" #Set URL of your InfluxDB installation
-  database_name:  ""             #Influx database name
-  user: ""                      #Influx User
-  password: ""                  #Influx Password
+  url: "https://127.0.0.1:1234"   #Set URL of your InfluxDB installation
+  database_name:  ""              #Influx database name
+  user: ""                        #Influx User
+  password: ""                    #Influx Password
+weather:
+  enabled: false      #Enable or disable weather forecast
+  api_token: ""       #OpenWeatherMap API Token
+  city_code: ""       #OpenWeatherMap City ID from http://bulk.openweathermap.org/sample/city.list.json.gz
+  language_code: "en" #Language code. E.g. en or de
+yield_forecast:
+  enabled: false      #Enable or disable yield forecast
+  api_token: ""       #Solarprognose.de API Token
+  type: "inverter"    #Either "plant" or "inverter" 
+  id: "1"             #ID of the plant or inverter, for which the forecast is requested
+  algorithm: ""       #Which algorithm to use, either "", "mosmix", "own-v1" or "clearsky"

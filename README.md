@@ -1,6 +1,10 @@
 # Solargo
 
-Solargo is a solar display for everyone who has a home solarplant with a Fronius Symo inverter. For now, we only support the Fronius Symo invter series, but feel free to open a PR to add more.
+[![Build Status](https://github.com/teuron/SolarGo/workflows/run%20tests/badge.svg)](https://github.com/teuron/SolarGo/actions?query=workflow%3A%22run+tests%22)
+[![Coverage Status](https://coveralls.io/repos/github/teuron/solargo/badge.svg?branch=master)](https://coveralls.io/github/teuron/solargo?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/teuron/SolarGo)](https://goreportcard.com/report/github.com/teuron/SolarGo)
+
+Solargo is a solar display for everyone who has a home solarplant with a Fronius Symo inverter. For now, we only support the Fronius Symo inverter series, but feel free to open a PR to add more.
 
 
 Usage

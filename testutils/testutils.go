@@ -3,6 +3,9 @@ package testutils
 import (
 	"fmt"
 	"solargo/inverter"
+	"solargo/persistence"
+	"solargo/weather"
+	"solargo/yield_forecast"
 	"testing"
 )
 
@@ -50,4 +53,22 @@ func (f *ErrorInverter) RetrieveData() (inverter.Data, error) {
 	var data inverter.Data
 
 	return data, fmt.Errorf("Error")
+}
+
+//SuccessDatabase used for testing
+type SuccessDatabase struct{}
+
+//SendData of the inverter to nowhere
+func (db *SuccessDatabase) SendData(data inverter.Data) {}
+
+//SendWeather updates nothing
+func (db *SuccessDatabase) SendWeather(data weather.Data) {}
+
+//SendYieldForecast updates nothing
+func (db *SuccessDatabase) SendYieldForecast(data []yield_forecast.Data) {}
+
+//GetTodaysProduction from nothing
+func (db *SuccessDatabase) GetTodaysProduction() ([]persistence.ProductionStamps, error) {
+	var ps []persistence.ProductionStamps
+	return ps, nil
 }

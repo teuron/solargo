@@ -1,12 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"net"
 	"reflect"
 	"solargo/inverter"
 	"solargo/persistence"
 	"solargo/testutils"
+	"solargo/weather"
+	"solargo/yield_forecast"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestReadConfig(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testname := fmt.Sprintf("%s", tt.path)
+		testname := tt.path
 		t.Run(testname, func(t *testing.T) {
 			if tt.errors {
 				testutils.AssertPanic(t, func() { ReadConfig(tt.path) })
@@ -59,7 +60,7 @@ func TestGetInverter(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testname := fmt.Sprintf("%s", tt.inverterName)
+		testname := tt.inverterName
 		t.Run(testname, func(t *testing.T) {
 			ans := tt.config.GetInverter()
 			if !reflect.DeepEqual(ans, tt.want) {
@@ -91,9 +92,75 @@ func TestGetDatabase(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testname := fmt.Sprintf("%s", tt.databaseName)
+		testname := tt.databaseName
 		t.Run(testname, func(t *testing.T) {
 			ans := tt.config.GetDatabase()
+			if !reflect.DeepEqual(ans, tt.want) {
+				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetWeatherService(t *testing.T) {
+	var config Config
+	config.Weather.Enabled = true
+	config.Weather.Token = "token"
+	config.Weather.City = "123"
+	config.Weather.LanguageCode = "de"
+
+	var w weather.OpenWeather
+	w.Token = "token"
+	w.City = "123"
+	w.LanguageCode = "de"
+	w.URL = weather.OpenWeatherURL
+
+	var tests = []struct {
+		weatherService string
+		config         Config
+		want           weather.GenericWeather
+	}{
+		{"OpenWeather", config, &w},
+	}
+
+	for _, tt := range tests {
+		testname := tt.weatherService
+		t.Run(testname, func(t *testing.T) {
+			ans := tt.config.GetWeatherService()
+			if !reflect.DeepEqual(ans, tt.want) {
+				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetYieldService(t *testing.T) {
+	var config Config
+	config.Yield.Enabled = true
+	config.Yield.Token = "token"
+	config.Yield.Type = "inverter"
+	config.Yield.ID = "1234"
+	config.Yield.Algorithm = "algo"
+
+	var s yield_forecast.SolarPrognose
+	s.Token = "token"
+	s.Type = "inverter"
+	s.ID = "1234"
+	s.Algorithm = "algo"
+	s.URL = yield_forecast.SolarPrognoseURL
+
+	var tests = []struct {
+		testName string
+		config   Config
+		want     yield_forecast.GenericYieldForecast
+	}{
+		{"Solarprognose", config, &s},
+	}
+
+	for _, tt := range tests {
+		testname := tt.testName
+		t.Run(testname, func(t *testing.T) {
+			ans := tt.config.GetYieldForecastService()
 			if !reflect.DeepEqual(ans, tt.want) {
 				t.Errorf("got %v, want %v", ans, tt.want)
 			}

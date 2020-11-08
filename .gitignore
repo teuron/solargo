@@ -1,3 +1,5 @@
 config.yaml
 logs/
 solargo
+coverage.html
+coverage.out

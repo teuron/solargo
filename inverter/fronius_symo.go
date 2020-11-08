@@ -38,6 +38,10 @@ func (f *FroniusSymo) GetInverterStatistics() (DailyStatistics, error) {
 	type Result struct {
 		Body struct {
 			Data struct {
+				DeviceStatus struct {
+					StatusCode int64
+					ErrorCode  int
+				}
 				Day struct {
 					Energy float64 `json:"Value"`
 				} `json:"DAY_ENERGY"`
@@ -47,10 +51,6 @@ func (f *FroniusSymo) GetInverterStatistics() (DailyStatistics, error) {
 				Total struct {
 					Energy float64 `json:"Value"`
 				} `json:"TOTAL_ENERGY"`
-			}
-			DeviceStatus struct {
-				StatusCode int64
-				ErrorCode  int
 			}
 		}
 		Head struct {
@@ -70,8 +70,8 @@ func (f *FroniusSymo) GetInverterStatistics() (DailyStatistics, error) {
 	statistics.DailyProduction = WattHour(result.Body.Data.Day.Energy)
 	statistics.YearlyProduction = WattHour(result.Body.Data.Year.Energy)
 	statistics.TotalProduction = WattHour(result.Body.Data.Total.Energy)
-	statistics.StatusCode = result.Body.DeviceStatus.StatusCode
-	statistics.ErrorCode = ErrorCode(result.Body.DeviceStatus.ErrorCode)
+	statistics.StatusCode = result.Body.Data.DeviceStatus.StatusCode
+	statistics.ErrorCode = ErrorCode(result.Body.Data.DeviceStatus.ErrorCode)
 	statistics.ErrorString = "" //TODO set right string
 
 	return statistics, nil
@@ -95,10 +95,12 @@ func (f *FroniusSymo) RetrieveData() (Data, error) {
 	done := make(chan bool)
 	occuredErrors := make(chan error)
 
-	//We have 8 concurrent functions
+	//We have 7 concurrent functions
 	wg.Add(7)
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.getAPIVersion(&data); err != nil {
 			log.Info("Could not retrieve GetApiVersion", err)
 			occuredErrors <- err
@@ -107,55 +109,60 @@ func (f *FroniusSymo) RetrieveData() (Data, error) {
 			log.Info("Wrong Api-Version", data.Info.FirmWare)
 			occuredErrors <- fmt.Errorf("Wrong Api-Version %s", data.Info.FirmWare)
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.powerFlowRealtimeData(&data); err != nil {
 			log.Info("Could not retrieve PowerflowRealtimeData", err)
 			occuredErrors <- err
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		//It is ok to have an error here -> not everyone has the right meter
 		if err := f.meterRealtimeData(&data); err != nil {
 			log.Info("Could not retrieve PowerflowRealtimeData", err)
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.inverterRealtimeData(&data); err != nil {
 			log.Info("Could not retrieve InverterRealtimeData", err)
 			occuredErrors <- err
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.inverterInfo(&data); err != nil {
 			log.Info("Could not retrieve InverterRealtimeData", err)
 			occuredErrors <- err
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.inverterCommonData(&data); err != nil {
 			log.Info("Could not retrieve common inverter data", err)
 			occuredErrors <- err
 		}
-		wg.Done()
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		if err := f.archiveData(&data); err != nil {
 			log.Info("Could not retrieve archive data", err)
 			occuredErrors <- err
 		}
-		wg.Done()
 	}()
 
 	// Important wait until wg is done
@@ -169,9 +176,8 @@ func (f *FroniusSymo) RetrieveData() (Data, error) {
 		// carry on
 		break
 	case err := <-occuredErrors:
-		close(occuredErrors)
 		log.Info("Received Error: ", err)
-		return data, err
+		return data, fmt.Errorf("Fronius Symo Error: %s", err)
 	}
 
 	log.Info(fmt.Sprintf("Received the following data: %#v", data))
@@ -341,7 +347,6 @@ func (f *FroniusSymo) getAPIVersion(data *Data) error {
 	if err != nil {
 		return fmt.Errorf("Error: %s", err)
 	}
-
 	data.Info.FirmWare = fmt.Sprintf("%d", result.APIVersion)
 	return nil
 }

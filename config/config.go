@@ -6,6 +6,8 @@ import (
 	"net"
 	"solargo/inverter"
 	"solargo/persistence"
+	"solargo/weather"
+	"solargo/yield_forecast"
 
 	"gopkg.in/yaml.v2"
 )
@@ -36,6 +38,19 @@ type Config struct {
 		User         string `yaml:"user"`
 		Password     string `yaml:"password"`
 	} `yaml:"persistence"`
+	Weather struct {
+		Enabled      bool   `yaml:"enabled"`
+		Token        string `yaml:"api_token"`
+		City         string `yaml:"city_code"`
+		LanguageCode string `yaml:"language_code"`
+	} `yaml:"weather"`
+	Yield struct {
+		Enabled   bool   `yaml:"enabled"`
+		Token     string `yaml:"api_token"`
+		Type      string `yaml:"type"`
+		ID        string `yaml:"id"`
+		Algorithm string `yaml:"algorithm"`
+	} `yaml:"yield_forecast"`
 }
 
 //ReadConfig reads the provided config yaml
@@ -69,4 +84,25 @@ func (config *Config) GetDatabase() persistence.GenericDatabase {
 	database.User = config.Persistence.User
 	database.Password = config.Persistence.Password
 	return &database
+}
+
+//GetWeatherService from a config
+func (config *Config) GetWeatherService() weather.GenericWeather {
+	var w weather.OpenWeather
+	w.Token = config.Weather.Token
+	w.LanguageCode = config.Weather.LanguageCode
+	w.City = config.Weather.City
+	w.URL = weather.OpenWeatherURL
+	return &w
+}
+
+//GetYieldForecastService from a config
+func (config *Config) GetYieldForecastService() yield_forecast.GenericYieldForecast {
+	var s yield_forecast.SolarPrognose
+	s.Token = config.Yield.Token
+	s.Type = config.Yield.Type
+	s.ID = config.Yield.ID
+	s.Algorithm = config.Yield.Algorithm
+	s.URL = yield_forecast.SolarPrognoseURL
+	return &s
 }
