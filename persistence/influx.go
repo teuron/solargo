@@ -127,7 +127,7 @@ func (db *Influx) GetTodaysProduction() ([]ProductionStamps, error) {
 	var ps []ProductionStamps
 
 	year, month, day := time.Now().Date()
-	query := url.QueryEscape(fmt.Sprintf(`SELECT cumulative_sum(integral("Power"))  / 3600 FROM "AC" WHERE time < now() and time >= '%d-%02d-%02dT00:00:00Z' GROUP BY time(1m)`, year, month, day))
+	query := url.QueryEscape(fmt.Sprintf(`SELECT "Power" FROM "AC" WHERE time < now() and time >= '%d-%02d-%02dT00:00:00Z'`, year, month, day))
 
 	uri := fmt.Sprintf("%s/query?db=%s&q=%s", db.URL, db.DatabaseName, query)
 	httpResult, err := http.Get(uri)
